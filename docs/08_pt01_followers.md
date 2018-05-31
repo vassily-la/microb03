@@ -34,7 +34,7 @@ user1.followed.append(user2)
 # user 1 unfollows user 2
 user1.followed.remove(user2)
 ```
-No nice, huh? Defenitely, something like `user1.follow(user2)` would like much better.  
+No nice, huh? Defenitely, something like `user1.follow(user2)` would look much better.  
 So let's add methods `follow()` and `unfollow()`.
 ```python
 class User(UserMixin, db.Model):
@@ -153,7 +153,61 @@ class UserModelCase(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main(verbosity=2)
 ```
-Terminal 1: `flask run`
+Terminal 1: `flask run`  
 Terminal 2: `python tests.py`
 
 ## Intergrate Followers with the App
+We have follow and unfollow functionality for the db, so let's create the views in `app/routes.py`.  
+```python
+@app.route('/follow/<username>')
+@login_required
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash(f'User {username} not found.')
+        return redirect(url_for('index'))
+    if user == current_user:
+        flash(f'You cannot follow yourself.')
+        return redirect(url_for('user', username=username))
+    current_user.follow(user)
+    db.session.commit()
+    flash(f'you are following {username}.')
+    return redirect(url_for('user', username=username))
+
+@app.route('/unfollow/<username>')
+@login_required
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash(f'User {username} not found.')
+        return redirect(url_for('index'))
+
+    if user == current_user:
+        flash(f'You cannot unfollow yourself.')
+        return redirect(url_for('user', username=username))
+        current_user.unfollow(user)
+        db.session.commit()
+        flash(f'you are not following {username}.')
+        return redirect(url_for('user', username=username))
+```
+Update the `users.html` template.
+```python
+<h1>User: {{ user.username }}</h1>
+{% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
+{% if user.last_seen %} <p>Last seen on: {{ user.last_seen }}</p> {% endif %}
+{# new line here #}
+<p>
+  {{ user.followers.count() }} followers, {{ user.followed.count() }} following.
+</p>
+{% if user == current_user %}
+<p>
+  <a href="{{ url_for('edit_profile') }}">Edit your profile</a>
+</p>
+{# New condition and stuff here #}
+{% elif not current_user.is_following(user) %}
+<p><a href="{{ url_for('follow', username=user.username) }}">Follow</a></p>
+{% else %}
+{# New condition and stuff here #}
+<p><a href="{{ url_for('unfollow', username=user.username) }}">Unfollow</a></p>
+{% endif %}
+```
