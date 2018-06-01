@@ -50,7 +50,7 @@ class User(UserMixin, db.Model):
         return is_following.count() == 1
 ```
 
-# Obtain Posts from Followed Users
+## Obtain Posts from Followed Users
 This one is tricky.
 ```python
 class User(db.Model):
@@ -211,3 +211,6 @@ Update the `users.html` template.
 <p><a href="{{ url_for('unfollow', username=user.username) }}">Unfollow</a></p>
 {% endif %}
 ```
+
+NEXT UP:
+* [09 Pagination Pt 1](09_pt01_pagination.md)
