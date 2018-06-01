@@ -171,5 +171,30 @@ def explore():
 Update the template.
 
 ## Paginate in the User Profile Page
+The User Profile page still has fake data.  
+So let's change the `user()` view.
+```python
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    page = request.args.get('page', 1, type=int)
+    posts = user.posts.order_by(Post.timestamp.desc()).paginate( page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('user', username=user.username, page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('user', username=user.username, page=posts.prev_num) if posts.has_prev else None
+    return render_template('user.html', user=user, posts=posts.items, next_url=next_url, prev_url=prev_url)
+```
+Change the template (`app/templates/user.html`)
+```html
+{% for post in posts %}
+  {% include "_post.html" %}
+{% endfor %}
+{% if prev_url %}
+<a href="{{ prev_url }}">Newer posts</a>
+{% endif %}
+{% if next_url %}
+<a href="{{ next_url }}">Older posts</a>
+{% endif %}
+{% endblock %}
+```
 
-##
+NEXT UP:
+* [10 Email Support](10_pt01_email_support.md)
