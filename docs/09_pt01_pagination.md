@@ -61,6 +61,47 @@ def index():
 Run the project and check the functionality.
 
 ## Make it Easier to Find Users to Follow
+Provide a new page - 'Explore'. The page will show a global message stream from all users.  
+Start with the view function.  
+```python
+@app.route('/explore')
+@login_required
+def explore():
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    # Will use the same template as the index page.
+    return render_template('index.html', title='Explore', posts=posts)
+```
+The view doesn't provide the form variable, so to prevent the web page from crashing, wrap the form in a conditional on the template.
+```python
+{% block content %}
+    <h1>Hi, {{ current_user.username }}!</h1>
+    {% if form %}
+    <form action="" method="post">
+      ...
+    </form>
+    {% endif %}
+```
+Add a link to the nav bar (`app/templates/base.html`).
+```python
+<a href="{{ url_for('explore') }}">Explore</a>
+```
+In each post, provide a link to the author's profile (`app/profiles/_post.html`).
+```python
+<td>
+  <p>
+    <a href="{{ url_for('user', username=post.author.username) }}">
+      {{ post.author.username }}
+    </a>
+   says: <strong>{{ post.body }}</strong></p>
+</td>
+```
+Display the posts using this subtemplate on the index page.
+```python
+{% for post in posts %}
+  {% include "_post.html" %}
+{% endfor %}
+```
+Run the project and check the functionality.
 
 ## Paginate Blog Posts
 
