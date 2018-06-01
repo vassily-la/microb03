@@ -1,4 +1,4 @@
-# 09 Pagination Pt 1
+# 09 Pagination
 
 ## Enable Submitting Messages
 We need a form to enter new messages.  
@@ -97,13 +97,52 @@ In each post, provide a link to the author's profile (`app/profiles/_post.html`)
 ```
 Display the posts using this subtemplate on the index page.
 ```python
+...
 {% for post in posts %}
   {% include "_post.html" %}
 {% endfor %}
+...
 ```
 Run the project and check the functionality.
 
 ## Paginate Blog Posts
+General query for paginated posts.
+```python
+>>> user.followed_posts().paginate(1, 20, False).items
+```
+Attributes:
+* page number (1+)  
+* number of messages per page   
+* an error flag. If True, returns a 404. If False, returns an empty list.  
+* return a `Pagination` object. To provide a list, use the `items` attribute.   
+Now, provide the config.
+```python
+class Config(object):
+    # [...]
+    POSTS_PER_PAGE = 3
+```
+URL examples:
+* Page 1, implicit: `http://localhost:5000/index`
+* Page 1, explicit: `http://localhost:5000/index?page=1`
+* Page : `http://localhost:5000/index?page=3`
+Update the views.
+```python
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@login_required
+def index():
+    # [...]
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate(page, app.config['POSTS_PER_PAGE'], False)
+    return render_template('index.html', title='Home', posts=posts.items, form=form)
+# [...]
+@app.route('/explore')
+@login_required
+def explore():
+    page = request.args.get('page', 1, False)
+    posts = Post.query.order_by(Post.timestamp.desc()).paginate(page, app.config['POSTS_PER_PAGE'], False)
+    return render_template('index.html', title='Explore', posts=posts.items)
+```
 
 ## Provide Page Navigation
 

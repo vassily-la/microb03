@@ -24,9 +24,10 @@ def index():
         db.session.commit()
         flash("Your post is now live.")
         return redirect(url_for('index'))
-    posts = current_user.followed_posts().all()
-
-    return render_template('index.html', title='Home', posts=posts, form=form)
+    #
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate( page, app.config['POSTS_PER_PAGE'], False)
+    return render_template('index.html', title='Home', form=form, posts=posts.items)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -124,7 +125,7 @@ def unfollow(username):
 @app.route('/explore')
 @login_required
 def explore():
-    posts = Post.query.order_by(Post.timestamp.desc()).all()
-    # Will use the same template as the index page.
-    # Won't provide the form, though
-    return render_template('index.html', title='Explore', posts=posts)
+    page = request.args.get('page', 1, type=int)
+    posts = Post.query.order_by(Post.timestamp.desc()).paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    return render_template("index.html", title='Explore', posts=posts.items)
