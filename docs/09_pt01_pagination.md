@@ -134,17 +134,41 @@ def index():
     # [...]
     page = request.args.get('page', 1, type=int)
     posts = current_user.followed_posts().paginate(page, app.config['POSTS_PER_PAGE'], False)
-    return render_template('index.html', title='Home', posts=posts.items, form=form)
+    return render_template('index.html', title='Home', posts=posts.items, form=form, prev_url=prev_url, next_url=next_url)
 # [...]
 @app.route('/explore')
 @login_required
 def explore():
     page = request.args.get('page', 1, False)
     posts = Post.query.order_by(Post.timestamp.desc()).paginate(page, app.config['POSTS_PER_PAGE'], False)
-    return render_template('index.html', title='Explore', posts=posts.items)
+    return render_template('index.html', title='Explore', posts=posts.items, prev_url=prev_url, next_url=next_url)
 ```
 
 ## Provide Page Navigation
+`Pagination` objects have attributes:
+* `has_next`. True if at least one more page after the current one.
+* `has_prev`. True if at least one more page before the current one.
+* `next_num`. Page number for the next page.
+* `prev_num`. Page number for the previous page.
+Update the views.
+```python
+def index():
+    # [...]
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate( page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('index', page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('index', page = posts.prev_num) if posts.has_prev else None
+    return render_template('index.html', title='Home', form=form, posts=posts.items)
+# [...]
+def explore():
+    page = request.args.get('page', 1, type=int)
+    posts = Post.query.order_by(Post.timestamp.desc()).paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('explore', page=posts.next_num) if posts.has_next else None
+    prev_url = url_for('explore', page = posts.prev_num) if posts.has_prev else None
+    return render_template("index.html", title='Explore', posts=posts.items)
+```
+Update the template.
 
 ## Paginate in the User Profile Page
 
